@@ -13,35 +13,38 @@ import time
 
 start_time = time.time()
 KB_EV = 8.617333262145e-5
-dfpt_dense_dyn_prefix = './H.dyn'
-dfpt_coarse_dyn_prefix = './H_coarse.dyn'
-coarse_dyn_prefix = './sscha_coarse.dyn'
-dense_dyn_prefix = './sscha_dense.dyn'
-interpolate_w_support = True
-nqirr = 30
-nqirr_coarse = 18
+dfpt_dense_dyn_prefix = './H.dyn'         # prefix for DFPT dynamical matrices and deformation potential files on dense grid
+dfpt_coarse_dyn_prefix = './H_coarse.dyn' # prefix for DFPT dynamical matrices and deformation potential files on coarse grid (the same grid as SSCHA calculation)
+coarse_dyn_prefix = './sscha_coarse.dyn'  # prefix for SSCHA dynamical matrices
+dense_dyn_prefix = './sscha_dense.dyn'    # prefix for interpolated SSCHA dynamical matrices
+interpolate_w_support = True              # If True will interpolate only anharmonic part of dynamical matrices
+nqirr = 30                                # Number of irreducible q points in dense grid
+nqirr_coarse = 18                         # Number of irreducible q points in coarse grid
 
+# Interpolate SSCHA dynamical matrices
 dyn = superconducting.interpolate_dyn(dense_dyn_prefix, coarse_dyn_prefix, dfpt_coarse_dyn_prefix, dfpt_dense_dyn_prefix, nqirr_coarse, nqirr, interpolate_w_support)
 freqs, pols = dyn.DiagonalizeSupercell()
 natom = dyn.structure.N_atoms
 
 supercell_matrix = dyn.GetSupercell()
+# Read in electron-phonon coupling 
 qpts, smearings, dos, elph, weights, qstar = parse_elph.read_elph(dfpt_dense_dyn_prefix, nqirr, natom)
 
-nom = 2000
-start_temp = 0.0
-sigma = 0.008
-smearing = 10.00/RY_TO_CM
-max_temp = 500.0
-ntemp = 100
-w_cut = max(freqs)*10.0
+nom = 2000                                # Number of frequency points in \alpha^2F
+start_temp = 0.0                          # Starting temperature for solving ME equations
+sigma = 0.008                             # Double delta smearing used in electron-phonon calculation
+smearing = 10.00/RY_TO_CM                 # Smearing for Gaussian that approximate phonon spectral functions
+max_temp = 500.0                          # Maximum temperature for which to calculate ME equations
+ntemp = 100                               # Number of temperature steps to take in range (start_temp, max_temp)
+w_cut = max(freqs)*10.0                   # Cutoff for Matsubara frequencies
 print('Cutoff for Matsubara frequencies is: ' + format(w_cut, '.5f') + ' Ry.')
-mu = 0.16 
-thr = 1.0e-4
-mix = 0.2
-max_iter = 10000
+mu = 0.16                                 # Reduced Coulomb potential
+thr = 1.0e-4                              # Self-consistency threashold for superconducting gap
+mix = 0.2                                 # Mixing parameter for self-consistency
+max_iter = 10000                          # Maximum number of iterations for the solution of ME equations
 
 
+# Check if requested double delta smearing is in the electron-phonon files
 found_smearing = False
 for i in range(len(smearings)):
 	if(np.abs(smearings[i] - sigma) < 1.0e-8):
@@ -52,6 +55,7 @@ for i in range(len(smearings)):
 if(found_smearing):
 	print('Calculating a2F...')
 	aF, pdos, aq, pq_dos, lambdas, omega = superconducting.calculate_a2f(dyn, qpts, weights, dos[ism], elph[:,ism,:,:], smearing, nom)
+        # Writing \alpha^2F
 	with open('a2f', 'w+') as outfile:
 		for i in range(nom):
 			outfile.write(3*' ' + format(omega[i], '.12e'))
@@ -60,6 +64,7 @@ if(found_smearing):
 	lambda_tot = 2.0*np.sum(aF/omega)*omega[0]
 	lambda_tot1 = np.average(np.sum(lambdas, axis = 1)[1:], weights = weights[1:])
 
+        # These two numbers should be really close. Increase nom if they are not!
 	print('Lambda final from a2F: ' + format(lambda_tot, '8f'))
 	print('Lambda average over q vectors: ' + format(lambda_tot1, '8f'))
 
