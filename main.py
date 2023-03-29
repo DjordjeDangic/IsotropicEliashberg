@@ -13,27 +13,27 @@ import time
 
 start_time = time.time()
 KB_EV = 8.617333262145e-5
-dfpt_dense_dyn_prefix = './LuH.dyn'
-dfpt_coarse_dyn_prefix = './LuH_coarse.dyn'
+dfpt_dense_dyn_prefix = './H.dyn'
+dfpt_coarse_dyn_prefix = './H_coarse.dyn'
 coarse_dyn_prefix = './sscha_coarse.dyn'
 dense_dyn_prefix = './sscha_dense.dyn'
 interpolate_w_support = True
-nqirr = 29
-nqirr_coarse = 3
+nqirr = 30
+nqirr_coarse = 18
 
-(dense, coarse, dfpt_coarse, dfpt_dense, nqirr_coarse, nqirr_dense, support)
-dyn = superconducting.interpolate_dyn(dense_dyn_prefix, coarse_dyn_prefix, dfpt_coarse_dyn_prefix, dfpt_dense_dyn_prefix, nqirr, nqirr_coarse, interpolate_w_support)
+dyn = superconducting.interpolate_dyn(dense_dyn_prefix, coarse_dyn_prefix, dfpt_coarse_dyn_prefix, dfpt_dense_dyn_prefix, nqirr_coarse, nqirr, interpolate_w_support)
 freqs, pols = dyn.DiagonalizeSupercell()
 natom = dyn.structure.N_atoms
 
 supercell_matrix = dyn.GetSupercell()
 qpts, smearings, dos, elph, weights, qstar = parse_elph.read_elph(dfpt_dense_dyn_prefix, nqirr, natom)
 
+nom = 2000
 start_temp = 0.0
 sigma = 0.008
 smearing = 10.00/RY_TO_CM
-max_temp = 300.0
-ntemp = 300
+max_temp = 500.0
+ntemp = 100
 w_cut = max(freqs)*10.0
 print('Cutoff for Matsubara frequencies is: ' + format(w_cut, '.5f') + ' Ry.')
 mu = 0.16 
